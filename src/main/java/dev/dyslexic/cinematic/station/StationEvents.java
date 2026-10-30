@@ -110,8 +110,9 @@ public final class StationEvents {
      ^/
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        // Sessions.mayUse asking: the event got here uncancelled, and ends here as a real use does
-        if (Sessions.probing) {
+        // Sessions.mayUse asking: the event got here uncancelled, and ends here as a real use does.
+        // Server side only: in singleplayer the client and the integrated server share these static fields.
+        if (Sessions.probing && !event.getLevel().isClientSide()) {
             Sessions.probeReached = true;
             event.setCanceled(true);
             return;
