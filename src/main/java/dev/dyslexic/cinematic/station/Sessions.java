@@ -46,6 +46,12 @@ public final class Sessions {
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
     private static final double REACH_SQR = 6.0 * 6.0;
+    //? if forge {
+    /*/^* True while {@link #mayUse} asks the protection mods; {@code StationEvents} ends the event for it. ^/
+    static boolean probing;
+    /^* Set by {@code StationEvents}: the event got past every listener that runs before ours. ^/
+    static boolean probeReached;
+    *///?}
 
     @Nullable
     public static Session get(ServerPlayer player) {
@@ -158,6 +164,14 @@ public final class Sessions {
             dev.dyslexic.cinematic.net.Network.sendToPlayer(player, new SessionClosePayload());
             return;
         }
+        //? if forge {
+        /*if (!mayUse(player, pos, side)) {
+            // no session of any kind survives a refusal: the client is told to leave the scene it started
+            end(player, false);
+            dev.dyslexic.cinematic.net.Network.sendToPlayer(player, new SessionClosePayload());
+            return;
+        }
+        *///?}
         if (get(player) != null) {
             end(player, false);
         }
@@ -193,6 +207,12 @@ public final class Sessions {
         if (player.isSpectator() || !kind.matches(state) || player.distanceToSqr(pos.getCenter()) > REACH_SQR) {
             return;
         }
+        //? if forge {
+        /*if (!mayUse(player, pos, Direction.UP)) {
+            dev.dyslexic.cinematic.net.Network.sendToPlayer(player, new SessionClosePayload());
+            return;
+        }
+        *///?}
         if (kind == StationKind.JUKEBOX) {
             // a jukebox has no window: it does what it does without the scene
             JukeboxActions.vanillaUse(player, pos);
@@ -208,6 +228,31 @@ public final class Sessions {
         }
     }
 
+    //? if forge {
+    /*/^*
+     * A scene starts from our own packet, and the use it replaces is cancelled on the client, so nothing on the server
+     * has asked the mods that protect blocks (claims, locks) whether this player may use this one. This asks them the
+     * way a real use does: vanilla's check, then the use event. {@code StationEvents} ends the event at the point where
+     * it ends a real use, so what listens after that does not run for a use that is not happening.
+     ^/
+    private static boolean mayUse(ServerPlayer player, BlockPos pos, Direction face) {
+        if (!player.mayInteract(player.level(), pos)) {
+            return false;
+        }
+        var event = new net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock(player,
+                net.minecraft.world.InteractionHand.MAIN_HAND, pos,
+                new net.minecraft.world.phys.BlockHitResult(pos.getCenter(), face, pos, false));
+        probeReached = false;
+        probing = true;
+        try {
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event);
+        } finally {
+            probing = false;
+        }
+        return probeReached && event.getUseBlock() != net.minecraftforge.eventbus.api.Event.Result.DENY;
+    }
+
+    *///?}
     /** Ends a session; the item still in hand goes back to the inventory. */
     public static void end(ServerPlayer player, boolean notifyClient) {
         Session session = SESSIONS.remove(player.getUUID());

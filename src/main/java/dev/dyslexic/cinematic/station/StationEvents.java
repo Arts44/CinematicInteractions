@@ -110,6 +110,12 @@ public final class StationEvents {
      ^/
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        // Sessions.mayUse asking: the event got here uncancelled, and ends here as a real use does
+        if (Sessions.probing) {
+            Sessions.probeReached = true;
+            event.setCanceled(true);
+            return;
+        }
         Player player = event.getEntity();
         BlockState state = event.getLevel().getBlockState(event.getPos());
         StationKind kind = StationKind.of(state);
