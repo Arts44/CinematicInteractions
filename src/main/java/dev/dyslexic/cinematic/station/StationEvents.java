@@ -114,6 +114,8 @@ public final class StationEvents {
         // Server side only: in singleplayer the client and the integrated server share these static fields.
         if (Sessions.probing && !event.getLevel().isClientSide()) {
             Sessions.probeReached = true;
+            // before cancelling: setCanceled(true) also sets useBlock to DENY
+            Sessions.probeDenied = event.getUseBlock() == Event.Result.DENY;
             event.setCanceled(true);
             return;
         }

@@ -51,6 +51,9 @@ public final class Sessions {
     static boolean probing;
     /^* Set by {@code StationEvents}: the event got past every listener that runs before ours. ^/
     static boolean probeReached;
+    /^* Set by {@code StationEvents} before it cancels: a listener before ours denied the use of the block. Read there,
+     because cancelling a RightClickBlock also sets useBlock and useItem to DENY (Forge 1.20.1). ^/
+    static boolean probeDenied;
     *///?}
 
     @Nullable
@@ -243,13 +246,14 @@ public final class Sessions {
                 net.minecraft.world.InteractionHand.MAIN_HAND, pos,
                 new net.minecraft.world.phys.BlockHitResult(pos.getCenter(), face, pos, false));
         probeReached = false;
+        probeDenied = false;
         probing = true;
         try {
             net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event);
         } finally {
             probing = false;
         }
-        return probeReached && event.getUseBlock() != net.minecraftforge.eventbus.api.Event.Result.DENY;
+        return probeReached && !probeDenied;
     }
 
     *///?}
