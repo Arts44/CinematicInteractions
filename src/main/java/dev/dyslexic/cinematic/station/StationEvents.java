@@ -114,7 +114,7 @@ public final class StationEvents {
         // Server side only: in singleplayer the client and the integrated server share these static fields.
         if (Sessions.probing && !event.getLevel().isClientSide()) {
             Sessions.probeReached = true;
-            // before cancelling: setCanceled(true) also sets useBlock to DENY
+            // RightClickBlock.setCanceled(true) met aussi useBlock et useItem à DENY (Forge 47.4.20) : lire avant d'annuler
             Sessions.probeDenied = event.getUseBlock() == Event.Result.DENY;
             event.setCanceled(true);
             return;
